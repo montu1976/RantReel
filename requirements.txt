@@ -1,4 +1,4 @@
-fastapi
-uvicorn
-transformers
-torch
+flask
+requests
+gunicorn
+
