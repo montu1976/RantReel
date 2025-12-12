@@ -44,36 +44,22 @@ def load_dataset():
 # SEMANTIC MATCHING
 # -------------------------
 def match_dataset(user_text, dataset):
-    if not dataset:
-        return None
-
-    try:
-        user_embed = model.encode(user_text, convert_to_tensor=True)
-    except Exception as e:
-        print("Embedding error:", e)
-        return None
-
-    best_item = None
-    best_score = 0.0
+    user_words = set(user_text.lower().split())
+    best = None
+    best_score = 0
 
     for item in dataset:
-        try:
-            ex_embed = model.encode(item["input"], convert_to_tensor=True)
-            score = util.pytorch_cos_sim(user_embed, ex_embed).item()
+        ex_words = set(item["input"].lower().split())
+        score = len(user_words & ex_words)
+        if score > best_score:
+            best = item
+            best_score = score
 
-            if score > best_score:
-                best_score = score
-                best_item = item
-        except:
-            continue
+    if best_score >= 2:
+        return best
 
-    # Require strong similarity
-    if best_score > 0.60:
-        print("Dataset Match Score =", best_score)
-        return best_item
-
-    print("Dataset NOT used. Score =", best_score)
     return None
+
 
 
 # -------------------------
