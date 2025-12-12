@@ -35,13 +35,21 @@ def match_dataset(user_text, dataset):
     user_words = set(user_text.lower().split())
     best = None
     best_score = 0
+
     for item in dataset:
         ex_words = set(item["input"].lower().split())
         score = len(user_words & ex_words)
+
         if score > best_score:
             best_score = score
             best = item
-    return best
+
+    # ⭐ NEW RULE: Require at least 2 keyword matches
+    if best_score >= 2:
+        return best  
+
+    return None  # too weak match → AI models will be used
+
 
 # -------------------------
 # LOCAL MODEL (OLLAMA)
