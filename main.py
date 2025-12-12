@@ -4,16 +4,7 @@ import glob
 import requests
 from flask import Flask, request, jsonify, render_template
 
-# -------------------------
-# FLASK APP
-# -------------------------
 app = Flask(__name__)
-
-# -------------------------
-# LOAD SEMANTIC MODEL
-# -------------------------
-from sentence_transformers import SentenceTransformer, util
-model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # -------------------------
 # LOAD DATASET
@@ -41,25 +32,32 @@ def load_dataset():
 
 
 # -------------------------
-# SEMANTIC MATCHING
+# LIGHTWEIGHT MATCHING (NO ML MODELS)
 # -------------------------
 def match_dataset(user_text, dataset):
     user_words = set(user_text.lower().split())
-    best = None
+
+    best_item = None
     best_score = 0
 
     for item in dataset:
-        ex_words = set(item["input"].lower().split())
+        text = item["input"].lower()
+        ex_words = set(text.split())
+
+        # count shared words
         score = len(user_words & ex_words)
+
         if score > best_score:
-            best = item
             best_score = score
+            best_item = item
 
+    # REQUIRE STRONGER MATCH (2 shared keywords)
     if best_score >= 2:
-        return best
+        print("Dataset match score =", best_score)
+        return best_item
 
+    print("Dataset skip. Score =", best_score)
     return None
-
 
 
 # -------------------------
@@ -119,10 +117,9 @@ def chat():
     data = request.get_json()
     user_message = data.get("message", "").strip()
 
-    # Load dataset
     dataset = load_dataset()
 
-    # 1️⃣ Try dataset (semantic match)
+    # 1️⃣ Try dataset match
     match = match_dataset(user_message, dataset)
     if match:
         return jsonify({"response": match["response"], "source": "dataset"})
@@ -150,7 +147,7 @@ def list_data():
 
 
 # -------------------------
-# HOME PAGE → WEB CHAT UI
+# HOME PAGE (WEB CHAT UI)
 # -------------------------
 @app.route("/")
 def home():
@@ -163,3 +160,4 @@ def home():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
